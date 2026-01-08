@@ -4,11 +4,6 @@
 # File: .github/workflows/openwrt-bulder.yml
 # Description: Build OpenWrt using GitHub Actions
 #
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
 name: Build immortalwrt24.10-5.4 360T7 Latest Passwall
 
@@ -32,6 +27,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    # 这一行是新增的，用于解决 403 权限问题
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout
@@ -85,8 +83,8 @@ jobs:
 
         # 移除 openwrt feeds 过时的luci版本
         rm -rf feeds/luci/applications/luci-app-passwall
-        git clone https://github.com/xiaorouji/openwrt-passwall package/passwall-luci        
-         
+        git clone https://github.com/xiaorouji/openwrt-passwall package/passwall-luci         
+          
     - name: Load custom configuration
       run: |
         [ -e files ] && mv files openwrt/files
@@ -100,7 +98,8 @@ jobs:
       run: |
         cd openwrt
         make defconfig
-        make download -j8
+        # 针对 ebtables 错误，增加多次重试逻辑
+        make download -j8 || make download -j1 || make download -j1
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
@@ -109,7 +108,8 @@ jobs:
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
+        # 如果多线程失败，自动转单线程 V=s 模式输出详细错误
+        make -j$(nproc) || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
@@ -149,11 +149,6 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch "${RELEASE_FILE}"
-
-        if [ "${UPLOAD_GOFILE}" = "true" ] && [ -n "${{ steps.gofile.outputs.url }}" ]; then
-          echo "{U+0001F517} [GoFile](${{ steps.gofile.outputs.url }})" >> "${RELEASE_FILE}"
-        fi
-
         echo "status=success" >> $GITHUB_OUTPUT
     
     - name: Upload firmware to release
