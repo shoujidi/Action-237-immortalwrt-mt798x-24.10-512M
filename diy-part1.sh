@@ -10,10 +10,12 @@
 # See /LICENSE for more information.
 #
 
-# Uncomment a feed source
-# sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+# 1. 添加 OpenClash 官方源
+echo 'src-git openclash https://github.com/vernesong/OpenClash.git' >>feeds.conf.default
 
-# Add a feed source
+# 2. (可选) 添加 Passwall 源（如果你也想尝试这个的话）
+echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
+echo 'src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages' >>feeds.conf.default
+
+# 3. 集成常用依赖包源
 # echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
-# echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
-# echo 'src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages' >>feeds.conf.default
