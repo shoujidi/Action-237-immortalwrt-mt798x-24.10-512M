@@ -1,3 +1,4 @@
+Gemini 修改支持360-7 512M固件，添加openclash 和filetransfer
 云编译7981固件
 （p3terx 2024新版 基于ubuntu22.04）
 
