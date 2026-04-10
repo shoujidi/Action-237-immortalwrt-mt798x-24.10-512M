@@ -4,23 +4,18 @@
 # File name: diy-part2.sh
 # Description: OpenWrt DIY script part 2 (After Update feeds)
 #
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
-# Modify default IP
+# 1. 修改默认 IP (已保留你的设置)
 sed -i 's/192.168.1.1/192.168.6.1/g' package/base-files/files/bin/config_generate
 
-# Modify default theme
-#sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+# 2. 修改主机名 (修正语法错误)
+# 使用 bash 的日期变量，确保写入文件的是最终生成的字符串，而不是 Makefile 脚本代码
+date_version=$(date +"%y%m%d")
+sed -i "s/hostname='ImmortalWrt'/hostname='360T7-PW2-$date_version'/g" package/base-files/files/bin/config_generate
 
-# Modify hostname
-sed -i 's/ImmortalWrt/ImmortalWrt-24.10-6.6-PW2-$(shell TZ="Asia/Shanghai" date +"%Y%m%d")/g' package/base-files/files/bin/config_generate
+# 3. 修改固件生成后的文件名 (增加日期前缀)
+# 这个在 include/image.mk 里可以使用 Makefile 语法，保留但优化了格式
+sed -i "s/IMG_PREFIX:=/IMG_PREFIX:=$(date +'%Y%m%d')-360T7-PW2-/" include/image.mk
 
-# Modify filename, add date prefix
-sed -i 's|IMG_PREFIX:=|IMG_PREFIX:=$(shell TZ="Asia/Shanghai" date +"%Y%m%d")-PW2-24.10-6.6-|' include/image.mk
-
-# Modify ppp-down, add sleep 3. 2025-6-13 source code is update, no need this
-#sed -i '$a\\sleep 3' package/network/services/ppp/files/lib/netifd/ppp-down
+# 4. (可选) 强制 Passwall 2 使用固定的依赖，防止编译时版本冲突
+# 如果你在 .yml 里已经处理了冲突，这里不需要额外操作
