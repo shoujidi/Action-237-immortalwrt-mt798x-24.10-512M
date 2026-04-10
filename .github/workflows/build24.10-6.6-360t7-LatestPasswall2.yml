@@ -77,20 +77,23 @@ jobs:
           cd openwrt
           ./scripts/feeds install -a
           
-          # 1. 强力删除旧路径，彻底解决 Error 128 (索要用户名) 报错
+          # 1. 彻底清理之前失败的残余文件夹
           rm -rf package/passwall-packages
           rm -rf package/passwall2-luci
           
-          # 2. 克隆更正后的官方组织地址，指定深度为 1 以提高速度
+          # 2. 克隆 Passwall2 依赖包仓库
           git clone --depth 1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
-          git clone --depth 1 https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2-luci
+          
+          # 3. 克隆 Passwall2 插件仓库（不使用 --depth 1，以便切换标签）
+          git clone https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2-luci
+          
+          # 4. 精确切换到 26.4.5-1 版本
+          # 注意：仓库标签通常带 v，这里使用 v26.4.5-1
+          cd package/passwall2-luci
+          git checkout v26.4.5-1
+          cd ../..
 
-          # 3. 指定插件稳定版本 (以 2026 年 4 月稳定标签 v26.4.10 为例)
-          # 如果想用最新版，可以跳过下面这两行 checkout
-          cd package/passwall2-luci && git checkout v26.4.10 && cd ../..
-          cd package/passwall-packages && git checkout main && cd ../..
-
-          # 4. 彻底清理 feeds 目录中的重复项（共存成功的关键）
+          # 5. 清理 feeds 冲突，确保 OpenClash 共存成功
           rm -rf feeds/luci/applications/luci-app-passwall
           rm -rf feeds/luci/applications/luci-app-openclash
 
