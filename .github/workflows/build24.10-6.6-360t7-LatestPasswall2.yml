@@ -77,15 +77,22 @@ jobs:
           cd openwrt
           ./scripts/feeds install -a
           
-          # 1. 彻底删除 feeds 中可能与 OpenClash 或 Passwall2 冲突的旧包
-          # 这一步非常重要，防止“同名包”导致编译中断
-          rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls}
+          # 1. 强力删除旧路径，彻底解决 Error 128 (索要用户名) 报错
+          rm -rf package/passwall-packages
+          rm -rf package/passwall2-luci
+          
+          # 2. 克隆更正后的官方组织地址，指定深度为 1 以提高速度
+          git clone --depth 1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
+          git clone --depth 1 https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2-luci
+
+          # 3. 指定插件稳定版本 (以 2026 年 4 月稳定标签 v26.4.10 为例)
+          # 如果想用最新版，可以跳过下面这两行 checkout
+          cd package/passwall2-luci && git checkout v26.4.10 && cd ../..
+          cd package/passwall-packages && git checkout main && cd ../..
+
+          # 4. 彻底清理 feeds 目录中的重复项（共存成功的关键）
           rm -rf feeds/luci/applications/luci-app-passwall
           rm -rf feeds/luci/applications/luci-app-openclash
-
-          # 2. 拉取 Passwall2 专用的依赖包和插件
-          git clone https://github.com/xiaorouji/openwrt-passwall-packages package/passwall-packages
-          git clone https://github.com/xiaorouji/openwrt-passwall2 package/passwall2-luci
 
       - name: Load custom configuration
         run: |
