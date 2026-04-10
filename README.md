@@ -1,4 +1,4 @@
-Gemini 修改支持360-7 512M固件，添加openclash 和filetransfer
+Gemini chatgpt claude联合修改支持360-7 512M固件，添加openclash 和filetransfer
 能不能用我也不知道 还没试
 
 
