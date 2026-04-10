@@ -76,11 +76,15 @@ jobs:
         run: |
           cd openwrt
           ./scripts/feeds install -a
-          # 移除 openwrt feeds 自带的核心库
+          
+          # 1. 彻底删除 feeds 中可能与 OpenClash 或 Passwall2 冲突的旧包
+          # 这一步非常重要，防止“同名包”导致编译中断
           rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls}
+          rm -rf feeds/luci/applications/luci-app-passwall
+          rm -rf feeds/luci/applications/luci-app-openclash
+
+          # 2. 拉取 Passwall2 专用的依赖包和插件
           git clone https://github.com/xiaorouji/openwrt-passwall-packages package/passwall-packages
-          # 移除 openwrt feeds 过时的luci版本
-          rm -rf feeds/luci/applications/luci-app-passwall2
           git clone https://github.com/xiaorouji/openwrt-passwall2 package/passwall2-luci
 
       - name: Load custom configuration
