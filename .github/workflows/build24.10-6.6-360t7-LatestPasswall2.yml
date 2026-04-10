@@ -1,9 +1,6 @@
-#
 # https://github.com/P3TERX/Actions-OpenWrt
-#
 # File: .github/workflows/openwrt-builder.yml
 # Description: Build OpenWrt using GitHub Actions
-#
 
 name: Build immortalwrt24.10-6.6 360T7 Latest Passwall2
 
@@ -27,7 +24,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     permissions:
       contents: write
 
