@@ -51,6 +51,23 @@ CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_tuic_client=y
 EOF
 fi
 
+# ---- 3. 启用 OpenClash 和 核心依赖 ----
+# 确保开启 OpenClash
+if ! grep -q "CONFIG_PACKAGE_luci-app-openclash=y" "$DST"; then
+    echo "CONFIG_PACKAGE_luci-app-openclash=y" >> "$DST"
+fi
+
+# 【重要】ImmortalWrt 24.10 必须开启 luci-compat，否则 OpenClash 菜单不显示
+if ! grep -q "CONFIG_PACKAGE_luci-compat=y" "$DST"; then
+    echo "CONFIG_PACKAGE_luci-compat=y" >> "$DST"
+fi
+
+# ---- 4. 清理可能导致冲突的旧依赖 (可选) ----
+# 防止旧的 dnsmasq-full 冲突
+sed -i 's/^CONFIG_PACKAGE_dnsmasq=y/# CONFIG_PACKAGE_dnsmasq is not set/' "$DST"
+if ! grep -q "CONFIG_PACKAGE_dnsmasq-full=y" "$DST"; then
+    echo "CONFIG_PACKAGE_dnsmasq-full=y" >> "$DST"
+fi
 echo ""
 echo "[完成] 已生成: $DST"
 echo ""
