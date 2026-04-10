@@ -77,23 +77,29 @@ jobs:
           cd openwrt
           ./scripts/feeds install -a
           
-          # 1. 彻底清理之前失败的残余文件夹
+          # 1. 强力清理旧路径，防止克隆冲突
           rm -rf package/passwall-packages
           rm -rf package/passwall2-luci
+          rm -rf package/openclash
           
-          # 2. 克隆 Passwall2 依赖包仓库
-          git clone --depth 1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
-          
-          # 3. 克隆 Passwall2 插件仓库（不使用 --depth 1，以便切换标签）
+          # 2. 克隆 Passwall2 及其依赖 (使用官方组织地址)
+          git clone https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
           git clone https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2-luci
           
-          # 4. 精确切换到 26.4.5-1 版本
-          # 注意：仓库标签通常带 v，这里使用 v26.4.5-1
+          # 3. 克隆 OpenClash
+          git clone https://github.com/vernesong/OpenClash.git package/openclash
+
+          # 4. 【关键】锁定 Passwall2 版本为 26.4.5-1
           cd package/passwall2-luci
-          git checkout v26.4.5-1
+          git checkout v26.4.5-1 || git checkout 26.4.5-1
           cd ../..
 
-          # 5. 清理 feeds 冲突，确保 OpenClash 共存成功
+          # 5. 【关键】锁定 OpenClash 版本为 v0.47.086
+          cd package/openclash
+          git checkout v0.47.086 || git checkout 0.47.086
+          cd ../..
+
+          # 6. 二次清理 feeds 目录，确保系统强制编译 package/ 目录下的指定版本
           rm -rf feeds/luci/applications/luci-app-passwall
           rm -rf feeds/luci/applications/luci-app-openclash
 
