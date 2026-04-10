@@ -25,3 +25,12 @@ rm -rf feeds/luci/applications/luci-app-openclash
 # 5. 【修正】有些时候 feeds 会自动拉取旧版依赖，强制删除它们以使用我们手动 clone 的版本
 rm -rf package/feeds/packages/xray-core
 rm -rf package/feeds/luci/luci-app-openclash
+
+# 1. 强制开启 Luci 兼容补丁 (2026年环境共存必须)
+echo "CONFIG_PACKAGE_luci-compat=y" >> .config
+
+# 2. 确保 OpenClash 使用其核心，防止被系统自带的旧版覆盖
+echo "CONFIG_PACKAGE_luci-app-openclash=y" >> .config
+
+# 3. 针对 360T7 的 6.6 内核优化 nftables 转发
+echo "CONFIG_PACKAGE_kmod-nft-tproxy=y" >> .config
