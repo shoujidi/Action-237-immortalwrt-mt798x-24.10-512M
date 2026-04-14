@@ -10,7 +10,7 @@
 # See /LICENSE for more information.
 #
 
-name: Build immortalwrt24.10-6.6 360T7 Latest Passwall+xray
+name: build24.10-6.6-360t7-pw-xray
 
 on:
   repository_dispatch:
