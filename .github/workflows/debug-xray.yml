@@ -1,0 +1,141 @@
+name: Debug xray-core Build
+
+on:
+  workflow_dispatch:
+
+env:
+  REPO_URL: https://github.com/padavanonly/immortalwrt-mt798x-24.10
+  REPO_BRANCH: main
+  TZ: Asia/Shanghai
+
+jobs:
+  debug-xray:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo apt-get autoremove -y
+        df -hT
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential clang flex bison g++ gawk \
+          gcc-multilib g++-multilib gettext git libncurses5-dev \
+          libssl-dev python3-distutils rsync unzip zlib1g-dev \
+          libelf-dev libfuse-dev pkg-config wget curl file
+
+    - name: Clone source
+      working-directory: /tmp
+      run: |
+        git clone $REPO_URL -b $REPO_BRANCH openwrt
+        sudo ln -sf /tmp/openwrt $GITHUB_WORKSPACE/openwrt
+
+    - name: Update feeds & fix golang
+      run: |
+        cd /tmp/openwrt
+        ./scripts/feeds update -a
+
+        echo "====== 替换 golang ======"
+        rm -rf feeds/packages/lang/golang
+        git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
+        echo "golang 版本："
+        cat feeds/packages/lang/golang/golang/Makefile | grep "GO_VERSION"
+
+    - name: Remove conflicting packages & clone passwall
+      run: |
+        cd /tmp/openwrt
+
+        echo "====== 删除冲突包 ======"
+        rm -rf feeds/packages/net/xray-core
+        rm -rf feeds/packages/net/v2ray-geodata
+        rm -rf feeds/packages/net/sing-box
+        rm -rf feeds/packages/net/chinadns-ng
+        rm -rf feeds/packages/net/dns2socks
+        rm -rf feeds/packages/net/hysteria
+        rm -rf feeds/packages/net/ipt2socks
+        rm -rf feeds/packages/net/microsocks
+        rm -rf feeds/packages/net/naiveproxy
+        rm -rf feeds/packages/net/shadowsocks-libev
+        rm -rf feeds/packages/net/shadowsocks-rust
+        rm -rf feeds/packages/net/shadowsocksr-libev
+        rm -rf feeds/packages/net/simple-obfs
+        rm -rf feeds/packages/net/tcping
+        rm -rf feeds/packages/net/trojan-plus
+        rm -rf feeds/packages/net/tuic-client
+        rm -rf feeds/packages/net/v2ray-plugin
+        rm -rf feeds/packages/net/xray-plugin
+        rm -rf feeds/packages/net/geoview
+        rm -rf feeds/packages/net/shadow-tls
+        rm -rf feeds/luci/applications/luci-app-passwall
+
+        echo "====== 克隆 passwall-packages ======"
+        git clone https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
+        git clone https://github.com/Openwrt-Passwall/openwrt-passwall package/passwall-luci
+
+        echo "====== xray-core Makefile 版本 ======"
+        cat package/passwall-packages/xray-core/Makefile | grep -E "PKG_VERSION|PKG_SOURCE|GO_PKG"
+
+    - name: Install feeds
+      run: |
+        cd /tmp/openwrt
+        ./scripts/feeds install -a
+
+    - name: Load config (360T7 target)
+      run: |
+        cd /tmp/openwrt
+        # 配置目标平台为 mt798x（360T7）
+        cat > .config <<'EOF'
+        CONFIG_TARGET_mediatek=y
+        CONFIG_TARGET_mediatek_filogic=y
+        CONFIG_TARGET_mediatek_filogic_DEVICE_360_t7=y
+        CONFIG_PACKAGE_xray-core=y
+        EOF
+        make defconfig 2>&1 | tail -5
+
+    - name: Download xray-core sources
+      run: |
+        cd /tmp/openwrt
+        echo "====== 下载 xray-core 依赖源码 ======"
+        make package/passwall-packages/xray-core/download -j4 V=s 2>&1 | tail -30
+
+    - name: Compile golang (host)
+      run: |
+        cd /tmp/openwrt
+        echo "====== 编译 golang host 工具 ======"
+        make package/feeds/packages/golang/host/compile -j$(nproc) V=s 2>&1 | tail -50
+
+    - name: Compile xray-core (verbose)
+      id: xray_build
+      continue-on-error: true
+      run: |
+        cd /tmp/openwrt
+        echo "====== 开始编译 xray-core（完整详细日志）======"
+        make package/passwall-packages/xray-core/compile \
+          -j1 V=s 2>&1 | tee /tmp/xray-build.log
+        echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+    - name: Print key error lines
+      if: always()
+      run: |
+        echo "====== 关键报错摘要（Error / undefined / unsupported）======"
+        grep -n -E "^(Error|error|make\[\|.*Error|.*undefined.*|.*unsupported.*|.*cannot.*|.*failed.*)" \
+          /tmp/xray-build.log | head -60 || echo "未匹配到关键词，请查看完整日志"
+
+        echo ""
+        echo "====== 最后 100 行日志 ======"
+        tail -100 /tmp/xray-build.log
+
+    - name: Upload full build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: xray-core-build-log
+        path: /tmp/xray-build.log
+        retention-days: 7
