@@ -80,7 +80,6 @@ jobs:
          rm -rf feeds/packages/lang/golang
          git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
 
-
     - name: Install feeds
       run: |
         cd openwrt
@@ -107,11 +106,10 @@ jobs:
         rm -rf feeds/packages/net/shadow-tls
         rm -rf feeds/luci/applications/luci-app-passwall
     
-    # ✅ 先克隆新包到 package 目录
+        # ✅ 先克隆新包到 package 目录
         git clone https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages
         git clone https://github.com/Openwrt-Passwall/openwrt-passwall package/passwall-luci
-    
-         
+            
         ./scripts/feeds install -a 
         
         
